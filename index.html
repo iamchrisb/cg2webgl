@@ -125,7 +125,7 @@
     
         }
         
-         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day, vec3 textColor_night ) {
+         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day ) {
         
             // ambient part
             vec3 ambient = material.kAmbient * ambientLight;
@@ -162,9 +162,9 @@
 
 		// for the texture		
 		varying vec2 textCoord_day;
-		varying vec2 textCoord_night;
+		//varying vec2 textCoord_night;
 		uniform sampler2D lightSampler;
-		uniform sampler2D nightSampler;
+		//uniform sampler2D nightSampler;
 		uniform bool blinn;
 		                
        void main() { 
@@ -180,14 +180,14 @@
             // for orthogonal mode, the viewing direction is simply (0,0,1)
             vec3 viewdirEC = usePerspective? normalize(-ecPosition.xyz) : vec3(0,0,1);
             
-            vec3 textColor = texture2D(lightSampler, textCoord).rgb;
+            vec3 textColor_day = texture2D(lightSampler, textCoord_day).rgb;
             vec3 color;
             // calculate color using Blinn-Phong function
              
              if(blinn == true){
              	color = blinnPhong( ecPosition.xyz, normalEC, viewdirEC );
              }else{
-             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night);
+             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day);
 			 }
 			//vec3 color1 = 0.5 * ( ( texture2D(lightSampler, textCoord).rgb ) * color );
 			
