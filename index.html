@@ -125,7 +125,7 @@
     
         }
         
-         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day ) {
+         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day , vec3 colNight, bool night) {
         
             // ambient part
             vec3 ambient = material.kAmbient * ambientLight;
@@ -154,7 +154,10 @@
 
             // specular contribution
             vec3 specular = material.kSpecular * light.color * pow(ndoth, material.shininess);
-                
+            
+			if(night == true){
+				ambient = colNight;
+			}
             // return sum of all contributions
             return ambient + diffuse + specular;
     
@@ -162,10 +165,10 @@
 
 		// for the texture		
 		varying vec2 textCoord_day;
-		//varying vec2 textCoord_night;
 		uniform sampler2D lightSampler;
-		//uniform sampler2D nightSampler;
+		uniform sampler2D nightSampler;
 		uniform bool blinn;
+		//uniform bool night;
 		                
        void main() { 
         
@@ -181,13 +184,15 @@
             vec3 viewdirEC = usePerspective? normalize(-ecPosition.xyz) : vec3(0,0,1);
             
             vec3 textColor_day = texture2D(lightSampler, textCoord_day).rgb;
+			vec3 textColor_night = texture2D(nightSampler, textCoord_day).rgb;
+			
             vec3 color;
             // calculate color using Blinn-Phong function
-             
+             bool night = true;
              if(blinn == true){
              	color = blinnPhong( ecPosition.xyz, normalEC, viewdirEC );
              }else{
-             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day);
+             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , night);
 			 }
 			//vec3 color1 = 0.5 * ( ( texture2D(lightSampler, textCoord).rgb ) * color );
 			

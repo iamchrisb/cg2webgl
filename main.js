@@ -63,6 +63,7 @@ initScene = function() {
 	// this texture will be loaded automatically through the UI
 	// this.daylightTexture = new Texture2D(gl, "textures/test_world_texture.gif", this);
 	this.daylightTexture = new Texture2D(gl, "textures/month01.jpg", this);
+	this.nightTexture = new Texture2D(gl, "textures/earth_at_night_2048.jpg", this);
 	// directional sunlight, defined in world coordinates
 	// this object will be manipulated directly by a simulation object
 	this.sunlight = new DirectionalLight([0, -1, 0], [1.8, 1.8, 1.8], false);
@@ -129,8 +130,10 @@ drawScene = function() {
 	// activate the material for rendering the equator
 	this.equatorMaterial.setUniforms(program, mv);
 	this.daylightTexture.makeActive(program, "lightSampler", 0);
+	this.nightTexture.makeActive(program, "nightSampler", 1);
 	// activate the material for rendering the earth
 	program.setUniform("blinn" , "bool", true, true );
+	//program.setUniform("night", "bool", true, true );
 	// draw the equator
 	if(this.showEquator)
 		this.equatorRing.draw(program);
