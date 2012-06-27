@@ -132,8 +132,9 @@
         
             // check viewing direction - is this back-facing?
             float ndotv = dot(n,v);
-            if(ndotv<0.0)
+            if(ndotv<0.0){
                 return vec3(0,0,0); // backface
+			}
 			// >
             // vector from light to current point
             vec3 l = light.direction;
@@ -142,9 +143,7 @@
             float ndotl = max( dot(n,-l), 0.0); 
 
             // diffuse contribution
-            //vec3 diffuse = material.kDiffuse * light.color * ndotl;
             vec3 diffuse = textColor_day * light.color * ndotl;
-            //vec3 diffuse = textColor_day;
             
             // half way vector between light and viewer
             vec3 h = normalize(v-l);
@@ -154,9 +153,9 @@
 
             // specular contribution
             vec3 specular = material.kSpecular * light.color * pow(ndoth, material.shininess);
-            
-			if(night == true){
-				ambient = colNight;
+            if(night == true){
+				float kof = 1.0 - ndotl;
+				return colNight * kof + specular + diffuse;
 			}
             // return sum of all contributions
             return ambient + diffuse + specular;
@@ -165,10 +164,17 @@
 
 		// for the texture		
 		varying vec2 textCoord_day;
+		
 		uniform sampler2D lightSampler;
 		uniform sampler2D nightSampler;
+		uniform sampler2D cloudSampler;
+		
 		uniform bool blinn;
-		//uniform bool night;
+		uniform bool unight;
+		uniform bool atmo;
+		uniform bool clouds;
+		
+		uniform float uAlpha;
 		                
        void main() { 
         
@@ -185,18 +191,20 @@
             
             vec3 textColor_day = texture2D(lightSampler, textCoord_day).rgb;
 			vec3 textColor_night = texture2D(nightSampler, textCoord_day).rgb;
+			vec3 textColor_clouds = texture2D(cloudSampler, textCoord_day).rgb;
 			
             vec3 color;
             // calculate color using Blinn-Phong function
              bool night = true;
              if(blinn == true){
              	color = blinnPhong( ecPosition.xyz, normalEC, viewdirEC );
-             }else{
-             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , night);
+             }else if(clouds) {
+				color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_clouds , textColor_night , unight);
+				//color = vec3(0.0,0.0,1.0);
+			 }else{
+             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , unight);
 			 }
-			//vec3 color1 = 0.5 * ( ( texture2D(lightSampler, textCoord).rgb ) * color );
-			
-            gl_FragColor = vec4(color, 1.0);
+            gl_FragColor = vec4(color,  uAlpha) ;
                                 
         }    
     </script>
@@ -210,7 +218,7 @@
   <tr>
     <td>
       <!-- the canvas in which to draw using WebGL -->
-      <canvas id="webgl_canvas" width="600" height="600"></canvas>
+      <canvas id="webgl_canvas" width="1024" height="1024"></canvas>
     </td>
     <td class="FormCell">
 

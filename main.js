@@ -61,9 +61,9 @@ initScene = function() {
 	var gl = this.getGL();
 
 	// this texture will be loaded automatically through the UI
-	// this.daylightTexture = new Texture2D(gl, "textures/test_world_texture.gif", this);
 	this.daylightTexture = new Texture2D(gl, "textures/month01.jpg", this);
 	this.nightTexture = new Texture2D(gl, "textures/earth_at_night_2048.jpg", this);
+	this.cloudTexture = new Texture2D(gl, "textures/earth_clouds_2048.jpg", this);
 	// directional sunlight, defined in world coordinates
 	// this object will be manipulated directly by a simulation object
 	this.sunlight = new DirectionalLight([0, -1, 0], [1.8, 1.8, 1.8], false);
@@ -72,14 +72,15 @@ initScene = function() {
 	// torus to symbolize the equator
 	this.equatorRing = new Torus(gl, 0.55, 0.005, 10, 160, [1, 0, 0], [0, 1, 0]);
 	this.showEquator = true;
-
 	// material for the equator ring
-	
 
-	// TODO: create the world sphere!
 	this.earthMaterial = new Material([0.0, 0.0, 0.0], [0.0, 0.6, 0.0], [0.6, 0.6, 0.6], 200);
 	this.earth = new Sphere(gl, 0.50, 50, 50, [1, 0, 0], [0, 1, 0]);
 	this.showEarth = true;
+	
+	this.atmosphereMaterial = new Material([0.0, 0.0, 0.0], [0.0, 0.6, 0.0], [0.6, 0.6, 0.6], 200);
+	this.atmosphere = new Sphere(gl, 0.55, 50, 50, [1, 0, 0], [0, 1, 0]);
+	this.showAtmosphere = true;
 	
 	
 	
@@ -129,18 +130,48 @@ drawScene = function() {
 
 	// activate the material for rendering the equator
 	this.equatorMaterial.setUniforms(program, mv);
+	
 	this.daylightTexture.makeActive(program, "lightSampler", 0);
 	this.nightTexture.makeActive(program, "nightSampler", 1);
+	this.cloudTexture.makeActive(program, "cloudSampler", 2);
 	// activate the material for rendering the earth
 	program.setUniform("blinn" , "bool", true, true );
-	//program.setUniform("night", "bool", true, true );
 	// draw the equator
 	if(this.showEquator)
 		this.equatorRing.draw(program);
 	
+	if(this.showLights){
+		program.setUniform("unight", "bool", true, true );
+	}else if(! this.showLights){
+		program.setUniform("unight", "bool", false, true );
+	}
+	
 	program.setUniform("blinn" , "bool" , false, true );
+	
 	this.earthMaterial.setUniforms(program, mv);
 	this.earth.draw(program);
+	
+	gl.blendFunc(gl.SRC_ALPHA, gl.DST_ALPHA );
+	
+	program.setUniform("uAlpha" , "float" , 1.0 , true );
+	if(this.showClouds){
+		program.setUniform("uAlpha" , "float" , 0.5 , true );
+		program.setUniform("clouds", "bool" , true , true );
+		gl.enable(gl.BLEND);
+		gl.disable(gl.DEPTH_TEST);
+		this.atmosphereMaterial.setUniforms(program, mv);
+		this.atmosphere.draw(program);
+	}else if(! this.showClouds){
+		program.setUniform("clouds", "bool" , false , true );
+		gl.disable(gl.BLEND);
+		gl.enable(gl.DEPTH_TEST);
+	}
+	
+	//program.setUniform("uAlpha" , "float" , 0.8 , true );
+	//program.setUniform("atmo" , "bool" , true, true );
+	
+	
+	
 
 }
 /*
