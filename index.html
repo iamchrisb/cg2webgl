@@ -125,10 +125,11 @@
     
         }
         
-         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day , vec3 colNight, bool night) {
+         vec3 illumWorld(vec3 pos, vec3 n, vec3 v, vec3 textColor_day , vec3 textColor_night , bool night , vec3 textColor_bmetry) {
         
             // ambient part
             vec3 ambient = material.kAmbient * ambientLight;
+			float bmetryAmount = (textColor_bmetry.x + textColor_bmetry.y + textColor_bmetry.z) / 3.0  ;
         
             // check viewing direction - is this back-facing?
             float ndotv = dot(n,v);
@@ -149,20 +150,23 @@
             vec3 h = normalize(v-l);
 
             // angle between half way vector and surface normal
-            float ndoth = max( dot(n,h), 0.0); 
-
+            float ndoth = max( dot(n,h), 0.0);
+			
             // specular contribution
-            vec3 specular = material.kSpecular * light.color * pow(ndoth, material.shininess);
-            if(night == true){
+            vec3 specular = (material.kSpecular * light.color * pow(ndoth, material.shininess)) * bmetryAmount ;
+            
+			
+			
+			if(night == true){
 				float kof = 1.0 - ndotl;
-				return colNight * kof + specular + diffuse;
+				return textColor_night * kof + specular  * bmetryAmount + diffuse;
 			}
             // return sum of all contributions
-            return ambient + diffuse + specular;
+            return ambient + diffuse + specular ;
     
         }
 		
-		 vec3 illumClouds(vec3 pos, vec3 n, vec3 v, vec3 textColor_clouds) {
+		 vec3 illumClouds(vec3 pos, vec3 n, vec3 v, vec3 textColor_clouds , vec3 textColor_night, vec3 textColor_day , vec3 textColor_bmetry , bool night) {
         
             // ambient part
             vec3 ambient = material.kAmbient * ambientLight;
@@ -180,19 +184,38 @@
             float ndotl = max( dot(n,-l), 0.0); 
 
             // diffuse contribution
-            vec3 diffuse = textColor_clouds * light.color * ndotl;
-            
+			
+            vec3 diffuse = textColor_clouds;
+			float amount = 1.0; 
+			float x = textColor_clouds.x;
+			float y = textColor_clouds.y;
+			float z = textColor_clouds.z;
+			
+			// how much the clouds blend the earth
+			amount = amount - ( x + y + z ) / 3.0;
+			
+			diffuse += textColor_day * amount ;
+			
+			// the angle - dependency
+			diffuse *= light.color * ndotl;
             // half way vector between light and viewer
             vec3 h = normalize(v-l);
 
             // angle between half way vector and surface normal
             float ndoth = max( dot(n,h), 0.0); 
+			
+			float bmetryAmount = (textColor_bmetry.x + textColor_bmetry.y + textColor_bmetry.z) / 3.0  ;
 
             // specular contribution
-            vec3 specular = material.kSpecular * light.color * pow(ndoth, material.shininess);
+            vec3 specular = (material.kSpecular * light.color * pow(ndoth, material.shininess)) * bmetryAmount ;
+			
+			if(night == true){
+				float kof = 1.0 - ndotl;
+				return ( (textColor_night - textColor_clouds) * kof  ) + specular + diffuse ;
+			}
          
             // return sum of all contributions
-            return ambient + diffuse + specular;
+            return ambient + diffuse + specular * amount;
     
         }
 
@@ -202,6 +225,7 @@
 		uniform sampler2D lightSampler;
 		uniform sampler2D nightSampler;
 		uniform sampler2D cloudSampler;
+		uniform sampler2D bmetrySampler;
 		
 		uniform bool blinn;
 		uniform bool unight;
@@ -226,18 +250,19 @@
             vec3 textColor_day = texture2D(lightSampler, textCoord_day).rgb;
 			vec3 textColor_night = texture2D(nightSampler, textCoord_day).rgb;
 			vec3 textColor_clouds = texture2D(cloudSampler, textCoord_day).rgb;
+			vec3 textColor_bmetry = texture2D(bmetrySampler, textCoord_day).rgb;
 			
             vec3 color;
             // calculate color using Blinn-Phong function
              bool night = true;
              if(blinn == true){
              	color = blinnPhong( ecPosition.xyz, normalEC, viewdirEC );
-             }else if(clouds) {
-				color = illumClouds(ecPosition.xyz, normalEC, viewdirEC, textColor_clouds );
+             }else if(clouds == true) {
+				color = illumClouds(ecPosition.xyz, normalEC, viewdirEC, textColor_clouds, textColor_night , textColor_day , textColor_bmetry , unight );
 			 }else{
-             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , unight);
+             	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , unight , textColor_bmetry );
 			 }
-            gl_FragColor = vec4(color,  uAlpha) ;
+            gl_FragColor = vec4(color,  uAlpha ) ;
                                 
         }    
     </script>
@@ -251,7 +276,7 @@
   <tr>
     <td>
       <!-- the canvas in which to draw using WebGL -->
-      <canvas id="webgl_canvas" width="1024" height="1024"></canvas>
+      <canvas id="webgl_canvas" width="600" height="600"></canvas>
     </td>
     <td class="FormCell">
 
