@@ -161,6 +161,40 @@
             return ambient + diffuse + specular;
     
         }
+		
+		 vec3 illumClouds(vec3 pos, vec3 n, vec3 v, vec3 textColor_clouds) {
+        
+            // ambient part
+            vec3 ambient = material.kAmbient * ambientLight;
+        
+            // check viewing direction - is this back-facing?
+            float ndotv = dot(n,v);
+            if(ndotv<0.0){
+                return vec3(0,0,0); // backface
+			}
+			// >
+            // vector from light to current point
+            vec3 l = light.direction;
+            
+            // cos of angle between light and surface. 0 = light behind surface
+            float ndotl = max( dot(n,-l), 0.0); 
+
+            // diffuse contribution
+            vec3 diffuse = textColor_clouds * light.color * ndotl;
+            
+            // half way vector between light and viewer
+            vec3 h = normalize(v-l);
+
+            // angle between half way vector and surface normal
+            float ndoth = max( dot(n,h), 0.0); 
+
+            // specular contribution
+            vec3 specular = material.kSpecular * light.color * pow(ndoth, material.shininess);
+         
+            // return sum of all contributions
+            return ambient + diffuse + specular;
+    
+        }
 
 		// for the texture		
 		varying vec2 textCoord_day;
@@ -199,8 +233,7 @@
              if(blinn == true){
              	color = blinnPhong( ecPosition.xyz, normalEC, viewdirEC );
              }else if(clouds) {
-				color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_clouds , textColor_night , unight);
-				//color = vec3(0.0,0.0,1.0);
+				color = illumClouds(ecPosition.xyz, normalEC, viewdirEC, textColor_clouds );
 			 }else{
              	color = illumWorld(ecPosition.xyz, normalEC, viewdirEC, textColor_day, textColor_night , unight);
 			 }
@@ -237,6 +270,9 @@
       <p>
         <input name="showClouds" type="checkbox" onclick="updateAnimationParams()" >
         Wolkenschichten
+	  <p>
+		<input name="showAtmosphere" type="checkbox" onclick="updateAnimationParams()" >
+		Atmopshäre
       <p>
         <input name="animateSun" type="checkbox" checked onclick="startStopSunAnimation()" >
         Sonne wandert mit  

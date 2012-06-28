@@ -79,7 +79,7 @@ initScene = function() {
 	this.showEarth = true;
 	
 	this.atmosphereMaterial = new Material([0.0, 0.0, 0.0], [0.0, 0.6, 0.0], [0.6, 0.6, 0.6], 200);
-	this.atmosphere = new Sphere(gl, 0.55, 50, 50, [1, 0, 0], [0, 1, 0]);
+	this.atmosphere = new Sphere(gl, 0.52, 50, 50, [1, 0, 0], [0, 1, 0]);
 	this.showAtmosphere = true;
 	
 	
@@ -159,6 +159,7 @@ drawScene = function() {
 		program.setUniform("clouds", "bool" , true , true );
 		gl.enable(gl.BLEND);
 		gl.disable(gl.DEPTH_TEST);
+		program.setUniform("blinn" , "bool" , true, true );
 		this.atmosphereMaterial.setUniforms(program, mv);
 		this.atmosphere.draw(program);
 	}else if(! this.showClouds){
@@ -218,6 +219,8 @@ updateAnimationParams = function() {
 
 	// use clouds?
 	theScene.showClouds = f.elements["showClouds"].checked == true;
+	
+	theScene.showAtmosphere = f.elements["showAtmosphere"].checked == true;
 
 	// sunlight simulation speed
 	var sunSpeed = parseInt(f.elements["sunSpeed"].value);
